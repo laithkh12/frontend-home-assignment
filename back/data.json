@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "uuid": "0",
+      "username": "Admin",
+      "password": "password123",
+      "role": "admin"
+    },
+    {
+      "uuid": "1",
+      "username": "Jane Doe",
+      "password": "password123",
+      "role": "user"
+    },
+    {
+      "uuid": "2",
+      "username": "John Smith",
+      "password": "password123",
+      "role": "user"
+    }
+  ]
+}
