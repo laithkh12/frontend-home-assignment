@@ -10,4 +10,4 @@ Welcome to our generic user management application. This project was created to 
 
 There are 2 types of user accounts: user and admin. Admins can create and delete users. The application currently doesn't have any page for normal users, so non-admin users can't do anything.
 
-Please refer to https://github.com/Meshulash/fullstack-assessment/issues for the assignments.
+Please refer to https://github.com/Meshulash/frontend-home-assignment/issues for the assignments.
