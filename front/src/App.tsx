@@ -1,46 +1,57 @@
-import { useState, useEffect } from 'react';
-import { LoginPage } from './pages/Login.tsx';
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { LoginPage } from './pages/Login';
+import { UsersPage } from './pages/Users';
 
-function App() {
-  // State to hold the auth token. It's null when logged out.
-  const [authToken, setAuthToken] = useState<string | null>(null);
+/**
+ * A wrapper component to manage routing logic.
+ * We need this because the useNavigate hook can only be used inside a Router component.
+ */
+function AppRoutes() {
+  const [authToken, setAuthToken] = useState<string | null>(localStorage.getItem('authToken'));
+  const navigate = useNavigate();
 
-  // On initial load, check if a token exists in localStorage
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      setAuthToken(token);
-    }
-  }, []);
-
-  // Callback function for successful login
   const handleLoginSuccess = (token: string, role: string) => {
-    // For now, we only care about admins
     if (role !== 'admin') {
       alert('Login failed: Only admin users are allowed.');
       return;
     }
     setAuthToken(token);
-    localStorage.setItem('authToken', token); // Persist token
+    localStorage.setItem('authToken', token);
+    navigate('/users'); // Redirect to users page on successful login
   };
 
   const handleLogout = () => {
     setAuthToken(null);
-    localStorage.removeItem('authToken'); // Clear token
+    localStorage.removeItem('authToken');
+    navigate('/login'); // Redirect to login page on logout
   };
 
-  // If there's no token, show the login page
-  if (!authToken) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
-  }
-
-  // If logged in, show the main application content
   return (
-    <div>
-      <h1>Welcome, Admin!</h1>
-      <p>This is the main application.</p>
-      <button onClick={handleLogout}>Logout</button>
-    </div>
+    <Routes>
+      <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
+      <Route
+        path="/users"
+        element={
+          authToken ? (
+            <UsersPage authToken={authToken} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/login" /> // Protect this route
+          )
+        }
+      />
+      {/* Default route redirects based on auth status */}
+      <Route path="*" element={<Navigate to={authToken ? "/users" : "/login"} />} />
+    </Routes>
+  );
+}
+
+// The main App component now just sets up the Router
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
 

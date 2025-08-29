@@ -1,0 +1,9 @@
+:8000 {
+    handle /api/* {
+        reverse_proxy back:8000
+    }
+
+	handle {
+        reverse_proxy front:8000
+    }
+}

@@ -1,0 +1,21 @@
+services:
+  caddy:
+    image: caddy:latest
+    ports:
+      - "0.0.0.0:8000:8000"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - back
+      - front
+
+  front:
+    build: front/
+    image: front
+    volumes:
+      - ./front/src:/app/src
+      - ./front/index.html:/app/index.html
+
+  back:
+    build: back/
+    image: back
