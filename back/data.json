@@ -1,22 +1,22 @@
 {
   "users": [
     {
-      "uuid": "0",
+      "uuid": "b023d532-c44c-490e-aa29-fae87ab1892a",
       "username": "Admin",
       "password": "password123",
       "role": "admin"
     },
     {
-      "uuid": "1",
-      "username": "Jane Doe",
-      "password": "password123",
-      "role": "user"
+      "username": "Jane",
+      "role": "user",
+      "password": "321321",
+      "uuid": "c341a20e-5404-43c0-9f60-2853e1668ac6"
     },
     {
-      "uuid": "2",
-      "username": "John Smith",
-      "password": "password123",
-      "role": "user"
+      "username": "John",
+      "role": "user",
+      "password": "123123",
+      "uuid": "76e9954e-9e5a-4573-bf71-e97632bc6beb"
     }
   ]
 }

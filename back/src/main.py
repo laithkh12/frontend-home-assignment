@@ -7,7 +7,7 @@ import jwt
 from flask import Flask, jsonify, request, g
 from flask_cors import CORS
 
-from db import Database
+from db import Database, User
 
 app = Flask(__name__)
 CORS(app)
@@ -66,7 +66,7 @@ def login() -> jsonify:
     if not data or not all((field in data) for field in ["username", "password"]):
         return jsonify({"message": "Username and password are required."}), 400
 
-    user = Database.get_user_by_username(data.get("username"))
+    user: User = Database.get_user_by_username(data.get("username"))
     if user is None or user["password"] != data.get("password"):
         return jsonify({"message": "Invalid credentials."}), 401
 
@@ -81,10 +81,10 @@ def login() -> jsonify:
         algorithm=JWT_ALGORITHM,
     )
 
+    del user["password"]
+
     # Question: can't the frontend get the role and the username from the returned token? Why return it in separate fields?
-    return jsonify(
-        {"token": token, "role": user["role"], "username": user["username"]}
-    ), 200
+    return jsonify({"token": token} | user), 200
 
 
 @app.route("/api/users", methods=["GET"])
@@ -116,16 +116,19 @@ def create_user() -> jsonify:
     return jsonify(user), 201
 
 
-def tests() -> None:
-    print("Get users:")
-    print(Database.get_users())
-    print("Get users without passwords:")
-    print(Database.get_users_without_passwords())
-    print("Get user by username:")
-    print(Database.get_user_by_username("John Smith"))
-    print("Get user by username that doesn't exist:")
-    print(Database.get_user_by_username("aklsdhjalksjdh"))
+@app.route("/api/users/<string:uuid>", methods=["DELETE"])
+@jwt_required
+@admin_required
+def delete_user(uuid: str) -> jsonify:
+    """Delete a user by uuid."""
+    if g.user["uuid"] == uuid:
+        return jsonify({"message": "Cannot delete self"}), 403
+
+    if Database.delete_user_by_uuid(uuid):
+        return jsonify({"message": "User deleted"}), 204
+
+    return jsonify({"message": "User not found."}), 404
+
 
 if __name__ == "__main__":
-    tests()
     app.run(debug=True, port=8000, host="0.0.0.0")

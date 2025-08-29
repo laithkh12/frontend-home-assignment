@@ -71,3 +71,19 @@ button:disabled {
   margin-bottom: 1rem;
   text-align: center;
 }
+
+/* --- FIX LOGIN PAGE OVERFLOW --- */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* prevent scrolling from sneaky white borders */
+}
+
+.login-page-container {
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}

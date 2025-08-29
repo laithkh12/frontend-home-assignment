@@ -1,11 +1,13 @@
-# Running the application locally
+# Running the application
 
-Ensure you have Docker and Docker Compose installed. It is recommended to use GitHub Codespaces to work with this repository, as that has these 2 tools installed, and the repository was already tested there. GitHub Codespaces is a cloud development environment that is free for the first 60 hours, which is enough for the purposes of this project.
+Ensure you have Docker and Docker Compose installed, then run in the root of the repository `docker compose up --build`. If there are any issues getting things to run properly, please contact us. You are not expected to fix the Docker configurations.
 
-# User management application
+Open `localhost:8000`. Look for the admin's username and password in `back/data.json`, and use that to enter the user management interface.
 
-There are 2 types of user accounts: user and admin.
+# About the application
 
-Admins can create, delete and modify users, and users can't do anything.
+Welcome to our generic user management application. This project was created to assess your skills at working with existing code, some of it good, and some of it less good.
 
-Please refer to https://github.com/Meshulash/fullstack-assessment/issues for the assignments. You are asked to start with the bug, proceed to the refactor, and end with the feature.
+There are 2 types of user accounts: user and admin. Admins can create and delete users. The application currently doesn't have any page for normal users, so non-admin users can't do anything.
+
+Please refer to https://github.com/Meshulash/fullstack-assessment/issues for the assignments.

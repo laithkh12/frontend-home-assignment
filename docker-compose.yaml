@@ -19,3 +19,5 @@ services:
   back:
     build: back/
     image: back
+    volumes:
+      - ./back/data.json:/app/data.json:rw

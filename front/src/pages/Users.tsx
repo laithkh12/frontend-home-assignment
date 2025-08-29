@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import './Users.css';
 
-// The User type is now defined directly in this file
+// The User type definition
 interface User {
   uuid: string;
   username: string;
@@ -19,8 +19,12 @@ export function UsersPage({ authToken, onLogout }: UsersPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
-  // Function to fetch users from the API
+  // New state for toast-style notifications
+  const [notification, setNotification] = useState<string | null>(null);
+
   const fetchUsers = async () => {
     setIsLoading(true);
     setError(null);
@@ -36,29 +40,69 @@ export function UsersPage({ authToken, onLogout }: UsersPageProps) {
       const data: User[] = await response.json();
       setUsers(data);
     } catch (err) {
+      // Use the main error state for critical fetch failures
       setError((err as Error).message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch users when the component mounts
   useEffect(() => {
     fetchUsers();
-  }, [authToken]); // Re-fetch if token changes, though it shouldn't in this flow
+  }, [authToken]);
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    try {
+      const response = await fetch(`/api/users/${userToDelete.uuid}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to delete user.');
+      }
+
+      setUserToDelete(null); // Close the confirmation modal
+      fetchUsers(); // Refresh the user list
+
+    } catch (err) {
+      // For non-critical errors, show a notification instead of replacing the page
+      setNotification((err as Error).message);
+      setUserToDelete(null); // Close modal on error
+    }
+  };
 
   return (
     <div className="users-page-container">
+      {/* Render the notification if one exists */}
+      {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
+
       <header className="users-page-header">
         <h1>User Management</h1>
-        <button onClick={onLogout} className="logout-button">Logout</button>
+        <button onClick={() => setConfirmLogout(true)} className="logout-button">
+          Logout
+        </button>
       </header>
 
       <Toolbar onOpenCreateModal={() => setIsModalOpen(true)} />
 
       {isLoading && <p>Loading users...</p>}
+      {/* The main error message is only for critical load failures */}
       {error && <p className="error-message">{error}</p>}
-      {!isLoading && !error && <UserTable users={users} />}
+
+      {/* The table is no longer hidden by non-critical errors */}
+      {!isLoading && !error && (
+        <UserTable
+          users={users}
+          onDeleteClick={(user) => setUserToDelete(user)}
+        />
+      )}
 
       {isModalOpen && (
         <CreateUserModal
@@ -66,15 +110,66 @@ export function UsersPage({ authToken, onLogout }: UsersPageProps) {
           onClose={() => setIsModalOpen(false)}
           onUserCreated={() => {
             setIsModalOpen(false);
-            fetchUsers(); // Refresh the user list
+            fetchUsers();
           }}
         />
       )}
+
+      {userToDelete && (
+        <ConfirmDeleteModal
+          user={userToDelete}
+          onConfirm={handleDeleteUser}
+          onCancel={() => setUserToDelete(null)}
+        />
+      )}
+
+      {confirmLogout && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Confirm Logout</h2>
+            <p>Are you sure you want to log out?</p>
+            <div className="modal-actions">
+              <button
+                type="button"
+                onClick={() => setConfirmLogout(false)}
+                className="button-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={onLogout}
+                className="logout-button"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }
 
-// --- Helper Components defined in the same file ---
+// --- Helper Components ---
+
+// Notification component
+function Notification({ message, onClose }: { message: string; onClose: () => void; }) {
+  // Automatically close the notification after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(onClose, 5000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="notification error">
+      <p>{message}</p>
+      <button onClick={onClose} className="close-button">&times;</button>
+    </div>
+  );
+}
 
 // Toolbar with the "Create User" button
 function Toolbar({ onOpenCreateModal }: { onOpenCreateModal: () => void }) {
@@ -86,7 +181,7 @@ function Toolbar({ onOpenCreateModal }: { onOpenCreateModal: () => void }) {
 }
 
 // Table to display users
-function UserTable({ users }: { users: User[] }) {
+function UserTable({ users, onDeleteClick }: { users: User[]; onDeleteClick: (user: User) => void; }) {
   return (
     <table className="users-table">
       <thead>
@@ -94,6 +189,7 @@ function UserTable({ users }: { users: User[] }) {
           <th>UUID</th>
           <th>Username</th>
           <th>Role</th>
+          <th className="actions-column">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -102,6 +198,11 @@ function UserTable({ users }: { users: User[] }) {
             <td>{user.uuid}</td>
             <td>{user.username}</td>
             <td>{user.role}</td>
+            <td className="actions-column">
+              <button onClick={() => onDeleteClick(user)} className="delete-button">
+                Delete
+              </button>
+            </td>
           </tr>
         ))}
       </tbody>
@@ -177,6 +278,25 @@ function CreateUserModal({ authToken, onClose, onUserCreated }: CreateUserModalP
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// Component for confirming deletion
+function ConfirmDeleteModal({ user, onConfirm, onCancel }: { user: User; onConfirm: () => void; onCancel: () => void; }) {
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Confirm Deletion</h2>
+        <p>
+          Are you sure you want to delete the user "<strong>{user.username}</strong>"?
+          This action cannot be undone.
+        </p>
+        <div className="modal-actions">
+          <button type="button" onClick={onCancel} className="button-secondary">Cancel</button>
+          <button type="button" onClick={onConfirm} className="delete-button">Delete</button>
+        </div>
       </div>
     </div>
   );

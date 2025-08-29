@@ -120,3 +120,16 @@ class Database:
         del user["password"]
 
         return user
+
+    @staticmethod
+    def delete_user_by_uuid(uuid: str) -> bool:
+        """Delete a user by uuid."""
+        users: list[User] = Database._read_users()
+        initial_user_count = len(users)
+        users = [user for user in users if user["uuid"] != uuid]
+
+        if len(users) < initial_user_count:
+            Database._write_users(users)
+            return True
+
+        return False
