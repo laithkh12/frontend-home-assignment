@@ -68,12 +68,6 @@ class Database:
     # API
 
     @staticmethod
-    @_data_file_required
-    def get_users() -> list[User]:
-        """Read the user data from the JSON file."""
-        return Database._read_users()
-
-    @staticmethod
     def get_users_without_passwords() -> list[UserWithoutPassword]:
         """Read the user data from the JSON file."""
         users = Database._read_users()
