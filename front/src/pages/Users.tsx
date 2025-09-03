@@ -1,5 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import './Users.css';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@mui/material';
 
 // The User type definition
 interface User {
@@ -10,17 +12,19 @@ interface User {
 
 interface UsersPageProps {
   authToken: string;
+  currentUser: string;
   onLogout: () => void;
 }
 
 // Main component for the entire page
-export function UsersPage({ authToken, onLogout }: UsersPageProps) {
+export function UsersPage({ authToken,currentUser, onLogout }: UsersPageProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const navigate = useNavigate();
 
   // New state for toast-style notifications
   const [notification, setNotification] = useState<string | null>(null);
@@ -54,6 +58,12 @@ export function UsersPage({ authToken, onLogout }: UsersPageProps) {
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
 
+    // Prevent self-deletion at the handler level as a safety net
+    if (userToDelete.username === currentUser) {
+      setUserToDelete(null);
+      return;
+    }
+
     try {
       const response = await fetch(`/api/users/${userToDelete.uuid}`, {
         method: 'DELETE',
@@ -85,9 +95,14 @@ export function UsersPage({ authToken, onLogout }: UsersPageProps) {
 
       <header className="users-page-header">
         <h1>User Management</h1>
-        <button onClick={() => setConfirmLogout(true)} className="logout-button">
-          Logout
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <Button variant="outlined" onClick={() => navigate('/about')}>
+            About My Account
+          </Button>
+          <button onClick={() => setConfirmLogout(true)} className="logout-button">
+            Logout
+          </button>
+        </div>
       </header>
 
       <Toolbar onOpenCreateModal={() => setIsModalOpen(true)} />
@@ -100,7 +115,12 @@ export function UsersPage({ authToken, onLogout }: UsersPageProps) {
       {!isLoading && !error && (
         <UserTable
           users={users}
-          onDeleteClick={(user) => setUserToDelete(user)}
+          currentUser={currentUser} // pass the current user down to the table
+          onDeleteClick={(user) => {
+            // Guard here too so the modal never opens for self
+            if (user.username === currentUser) return;
+            setUserToDelete(user);
+          }}
         />
       )}
 
@@ -181,7 +201,7 @@ function Toolbar({ onOpenCreateModal }: { onOpenCreateModal: () => void }) {
 }
 
 // Table to display users
-function UserTable({ users, onDeleteClick }: { users: User[]; onDeleteClick: (user: User) => void; }) {
+function UserTable({ users, currentUser, onDeleteClick }: { users: User[]; currentUser: string; onDeleteClick: (user: User) => void; }) {
   return (
     <table className="users-table">
       <thead>
@@ -199,9 +219,12 @@ function UserTable({ users, onDeleteClick }: { users: User[]; onDeleteClick: (us
             <td>{user.username}</td>
             <td>{user.role}</td>
             <td className="actions-column">
-              <button onClick={() => onDeleteClick(user)} className="delete-button">
-                Delete
-              </button>
+              {/* Hide Delete for the currently logged-in user */}
+              {user.username !== currentUser && (
+                <button onClick={() => onDeleteClick(user)} className="delete-button">
+                  Delete
+                </button>
+              )}
             </td>
           </tr>
         ))}

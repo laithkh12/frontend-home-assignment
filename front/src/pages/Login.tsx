@@ -1,10 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import './Login.css';
-import './Users.css';
+import { Container, Box, Typography, TextField, Button, Alert, Paper } from '@mui/material';
 
 // Props for the component, including a callback for when login is successful
 interface LoginPageProps {
-  onLoginSuccess: (token: string, role: string) => void;
+  onLoginSuccess: (token: string, role: string, username: string) => void;
 }
 
 export function LoginPage({ onLoginSuccess }: LoginPageProps) {
@@ -38,7 +37,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
       // On success, call the parent component's onLoginSuccess function
       if (data.token) {
-        onLoginSuccess(data.token, data.role);
+        onLoginSuccess(data.token, data.role, username);
       }
 
     } catch (err) {
@@ -50,36 +49,41 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   };
 
   return (
-    <div className="login-page-container">
-      <div className="login-form-container">
-        <h2>Admin Login</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label htmlFor="username">Username</label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
-          <div className="input-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          {error && <p className="error-message">{error}</p>}
-          <button type="submit" disabled={isLoading}>
+    <Container maxWidth="sm" sx={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+      <Paper elevation={6} sx={{ p: 4, borderRadius: 2, width: '100%' }}>
+        <Typography variant="h5" align="center" gutterBottom>
+          Admin Login
+        </Typography>
+        <Box component="form" onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3 }}
+            disabled={isLoading}
+          >
             {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-      </div>
-    </div>
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
 }
